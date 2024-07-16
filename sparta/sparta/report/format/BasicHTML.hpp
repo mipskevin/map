@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 #include <math.h>
 
 #include "sparta/report/format/BaseOstreamFormatter.hpp"
@@ -138,112 +139,153 @@ protected:
         (void) out;
     }
 
-    /*!
-     * \brief Writes the content of this report to some output
-     */
-    virtual void writeContentToStream_(std::ostream& out) const override  {
-        out << "<html>"
-            "<head><title>" << report_->getName() << "</title>"
-            "<style type='text/css'>\n"
-            "table {\n"
-            "  font-family:courier new, monospace;\n"
-            "}\n"
-            "table.report_table {\n"
-            "  border:1px solid #808080;\n"
-            "}\n"
-            "table.subreport_table {\n"
-            "  border:1px solid #808080;\n"
-            "}\n"
-            ".subreport_section {\n"
-            "  font-size:80%;\n"
-            "  text-align:left;\n"
-            "  font-style:italic;\n"
-            "  color:#505050;\n"
-            "}\n"
-            "th.tabletitle {\n"
-            "  padding:6px;\n"
-            "  text-align:left;\n"
-            "  font-family:Helvetica, Verdana, sans-serif;\n"
-            "  font-size:120%;\n"
-            "  border-bottom:3px solid #404040;\n"
-            "  background-color:#fffff0;\n"
-            "}\n"
-            "th.tablesection {\n"
-            "  font-weight:normal;"
-            "  text-align:left;\n"
-            "  font-family:Helvetica, Verdana, sans-serif;\n"
-            "  font-size:80%;\n"
-            "  border-bottom:1px solid #404040;\n"
-            "  background-color:#d0d0d0;\n"
-            "}\n"
-            "th {\n"
-            "  font-size:95%;\n"
-            "  background-color:#d0d0d0;\n"
-            "  border-bottom:1px solid #707070;\n"
-            "  border-right:1px solid #C0C0C0;\n"
-            "  }\n"
-            "td {\n"
-            "  border-bottom:1px solid #707070;\n"
-            "  border-right:1px solid #C0C0C0;\n"
-            "}\n"
-            "td.name {\n"
-            "  font-size:80%;\n"
-            "  text-align:left;\n"
-            "  padding-right:4px;\n"
-            "  width:400px;\n"
-            "}\n"
-            "td.value {\n"
-            "  font-size:80%;\n"
-            "  width:180px;\n"
-            "  padding-left:8px;\n"
-            "  font-weight:bold;\n"
-            "}\n"
-            "td.expression {\n"
-            "  font-size:75%;\n"
-            "  color:#505050;\n"
-            "  padding-left:8px;\n"
-            "}\n"
-            "td.info {\n"
-            "  text-align:right;\n"
-            "  font-style:italic;"
-            "  font-size:80%;"
-            "  padding-right:20px;\n"
-            "}\n"
-            "span.info_span {\n"
-            "  font-style:italic;\n"
-            "  font-size:70%;\n"
-            "}\n"
-            "span.units_span {\n"
-            //"  font-style:italic;\n"
-            "  font-size:115%;\n"
-            "  color:#808080;\n"
-            "}\n"
-            "td.infoval {\n"
-            "  text-align:left;\n"
-            "  font-style:italic;\n"
-            "  font-size:90%;\n"
-            "}\n"
-            "td.subreport_td {\n"
-            "  text-align:left;\n"
-            "  padding:12px 8px 0px 16px;\n"
-            "}\n"
-            "</style>\n"
-            "<script>\n"
-            "function hideNode(name) {\n"
-            "    document.getElementById(name).style.display='none';\n"
-            "    document.getElementById(name + \"_show\").style.display='inline';\n"
-            "    document.getElementById(name + \"_hide\").style.display='none';\n"
-            "}\n"
-            "function showNode(name) {\n"
-            "    document.getElementById(name).style.display='block';\n"
-            "    document.getElementById(name + \"_show\").style.display='none';\n"
-            "    document.getElementById(name + \"_hide\").style.display='inline';\n"
-            "}\n"
-            "</script>\n"
-            "</head>\n"
-            "<body style='font-size:8px;'>";
+    virtual void writeCSSToStream__(std::ostream& out) const {
+        out << "<style type='text/css'>\n"
+               "table {\n"
+               "  font-family:courier new, monospace;\n"
+               "}\n"
+               "table.report_table {\n"
+               "  border:1px solid #808080;\n"
+               "}\n"
+               "table.subreport_table {\n"
+               "  border:1px solid #808080;\n"
+               "}\n"
+               ".subreport_section {\n"
+               "  font-size:80%;\n"
+               "  text-align:left;\n"
+               "  font-style:italic;\n"
+               "  color:#505050;\n"
+               "}\n"
+               "th.tabletitle {\n"
+               "  padding:6px;\n"
+               "  text-align:left;\n"
+               "  font-family:Helvetica, Verdana, sans-serif;\n"
+               "  font-size:120%;\n"
+               "  border-bottom:3px solid #404040;\n"
+               "  background-color:#00fff0;\n"
+               "}\n"
+               "th.tablesection {\n"
+               "  font-weight:normal;"
+               "  text-align:left;\n"
+               "  font-family:Helvetica, Verdana, sans-serif;\n"
+               "  font-size:80%;\n"
+               "  border-bottom:1px solid #404040;\n"
+               "  background-color:#d0d0d0;\n"
+               "}\n"
+               "th {\n"
+               "  font-size:95%;\n"
+               "  background-color:#d0d0d0;\n"
+               "  border-bottom:1px solid #707070;\n"
+               "  border-right:1px solid #C0C0C0;\n"
+               "  }\n"
+               "td {\n"
+               "  border-bottom:1px solid #707070;\n"
+               "  border-right:1px solid #C0C0C0;\n"
+               "}\n"
+               "td.name {\n"
+               "  font-size:80%;\n"
+               "  text-align:left;\n"
+               "  padding-right:4px;\n"
+               "  width:400px;\n"
+               "}\n"
+               "td.value {\n"
+               "  font-size:80%;\n"
+               "  width:180px;\n"
+               "  padding-left:8px;\n"
+               "  font-weight:bold;\n"
+               "}\n"
+               "td.expression {\n"
+               "  font-size:75%;\n"
+               "  color:#505050;\n"
+               "  padding-left:8px;\n"
+               "}\n"
+               "td.info {\n"
+               "  text-align:right;\n"
+               "  font-style:italic;"
+               "  font-size:80%;"
+               "  padding-right:20px;\n"
+               "}\n"
+               "span.info_span {\n"
+               "  font-style:italic;\n"
+               "  font-size:70%;\n"
+               "}\n"
+               "span.units_span {\n"
+               //"  font-style:italic;\n"
+               "  font-size:115%;\n"
+               "  color:#808080;\n"
+               "}\n"
+               "td.infoval {\n"
+               "  text-align:left;\n"
+               "  font-style:italic;\n"
+               "  font-size:90%;\n"
+               "}\n"
+               "td.subreport_td {\n"
+               "  text-align:left;\n"
+               "  padding:12px 8px 0px 16px;\n"
+               "}\n"
+               "</style>\n";
+    }
 
-        if(show_sim_info_){
+    virtual std::filesystem::path getRoot() const {
+        /* WARNING: This is Linux only for now... */
+        char szPath[PATH_MAX];
+        ssize_t count = readlink("/proc/self/exe", szPath, PATH_MAX);
+        szPath[count] = '\0';
+        const std::filesystem::path exePath = szPath;
+        return exePath.parent_path();
+    }
+
+    virtual bool writeFileContentToStream_(std::ostream &out, std::string filename) const {
+        const std::filesystem::path cssPath = getRoot() / filename;
+        if (std::filesystem::exists(cssPath)) {
+            std::ifstream t(cssPath);
+            std::stringstream buffer;
+            buffer << t.rdbuf();
+            out << buffer.str();
+            return true;
+        }
+        return false;
+    }
+
+    virtual bool fileExists(std::string filename) const {
+        const std::filesystem::path filePath = getRoot() / filename;
+        return std::filesystem::exists(filePath);
+    }
+
+    virtual void writeContentToStream_(std::ostream &out) const override
+    {
+        out << "<html>"
+               "<head><title>"
+            << report_->getName() << "</title>\n";
+
+        if (!writeFileContentToStream_(out, "cssstyle.html"))
+        {
+            // file was not found, use the hard-coded stuff...
+            writeCSSToStream__(out);
+        }
+
+        if (!writeFileContentToStream_(out, "script.html"))
+        {
+            /* Tree node collapse/expand script */
+            out << "<script>\n"
+                "function hideNode(name) {\n"
+                "    document.getElementById(name).style.display='none';\n"
+                "    document.getElementById(name + \"_show\").style.display='inline';\n"
+                "    document.getElementById(name + \"_hide\").style.display='none';\n"
+                "}\n"
+                "function showNode(name) {\n"
+                "    document.getElementById(name).style.display='block';\n"
+                "    document.getElementById(name + \"_show\").style.display='none';\n"
+                "    document.getElementById(name + \"_hide\").style.display='inline';\n"
+                "}\n"
+                "</script>\n";
+        }
+
+        out << "</head>\n";
+        out << "<body style='font-size:8px;'>";
+
+        if (show_sim_info_ && fileExists("include_info"))
+        {
             out << "<table style='width:100%; border:1px solid black;'><tbody>\n"
                 << sparta::SimulationInfo::getInstance().stringize("<tr><td>", "</td></tr>")
                 << "</tbody></table>\n"
