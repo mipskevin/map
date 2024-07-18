@@ -258,33 +258,46 @@ protected:
                "<head><title>"
             << report_->getName() << "</title>\n";
 
-        if (!writeFileContentToStream_(out, "cssstyle.html"))
+        if (!writeFileContentToStream_(out, "html_report/style.css"))
         {
-            // file was not found, use the hard-coded stuff...
+            // sidecar file was not found, use the hard-coded stuff...
             writeCSSToStream__(out);
         }
 
-        if (!writeFileContentToStream_(out, "script.html"))
-        {
-            /* Tree node collapse/expand script */
-            out << "<script>\n"
-                "function hideNode(name) {\n"
-                "    document.getElementById(name).style.display='none';\n"
-                "    document.getElementById(name + \"_show\").style.display='inline';\n"
-                "    document.getElementById(name + \"_hide\").style.display='none';\n"
-                "}\n"
-                "function showNode(name) {\n"
-                "    document.getElementById(name).style.display='block';\n"
-                "    document.getElementById(name + \"_show\").style.display='none';\n"
-                "    document.getElementById(name + \"_hide\").style.display='inline';\n"
-                "}\n"
-                "</script>\n";
-        }
+        /* Tree node collapse/expand script is always included */
+        out << "<script>\n"
+            "function hideNode(name) {\n"
+            "    document.getElementById(name).style.display='none';\n"
+            "    document.getElementById(name + \"_show\").style.display='inline';\n"
+            "    document.getElementById(name + \"_hide\").style.display='none';\n"
+            "}\n"
+            "function showNode(name) {\n"
+            "    document.getElementById(name).style.display='block';\n"
+            "    document.getElementById(name + \"_show\").style.display='none';\n"
+            "    document.getElementById(name + \"_hide\").style.display='inline';\n"
+            "}\n";
+
+        /* Add custom script, if any... */
+        writeFileContentToStream_(out, "html_report/script.js");
+
+        out << "</script>\n";
 
         out << "</head>\n";
-        out << "<body style='font-size:8px;'>";
 
-        if (show_sim_info_ && fileExists("include_info"))
+        /* If the hard-coded body tag is not good enough, provide a different one */
+        if (!writeFileContentToStream_(out, "html_report/body_tag.html"))
+        {
+            out << "<body style='font-size:8px;'>";
+        }
+
+        /* Add any HTML that we want before the header info block */
+        writeFileContentToStream_(out, "html_report/body_top.html");
+
+        /*
+            Optionally include the header block.  This can be controlled
+            via API or via the existence of a sidecar file.
+        */
+        if (show_sim_info_ && fileExists("html_report/include_info"))
         {
             out << "<table style='width:100%; border:1px solid black;'><tbody>\n"
                 << sparta::SimulationInfo::getInstance().stringize("<tr><td>", "</td></tr>")
@@ -293,7 +306,14 @@ protected:
                 << std::endl;
         }
 
+        /* Add any HTML that we want after the header info block */
+        writeFileContentToStream_(out, "html_report/body_after_info.html");
+
+        /* Add the report data tables */
         dump_(out, report_, 0);
+
+        /* Add any HTML that we want after the report data table(s) */
+        writeFileContentToStream_(out, "html_report/body_after_report.html");
 
         out << "</body>"
             << "</html>\n";
